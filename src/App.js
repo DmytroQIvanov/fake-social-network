@@ -4,55 +4,31 @@ import { Loader } from "./components/Loader/Loader";
 import { SideBar } from "./components/SideBar/SideBar";
 import { UserBar } from "./components/UserBar/UserBar";
 import { UsersBar } from "./components/UsersBar/UsersBar";
-import fetchUserInfo from "./scripts/fetchUserInfo";
+import { FetchUserInfo } from "./scripts/fetchUserInfo";
+import { connect } from "react-redux";
+import { store } from "./Redux/stores";
+
 import "./App.sass";
 
-function App() {
-  let [userInfo, serUserInfo] = useState();
-  let [userPosts, setUserPosts] = useState();
-  let [users, setUsers] = useState();
-
-  let [userId, setUserID] = useState(1);
-  let [postComments, setPostComments] = useState();
-
-  useMemo(() => {
-    //USER--INFO
-    fetchUserInfo(userId).then((resp) => {
-      serUserInfo(resp);
-    });
-
-    //USERS--POSTS
-    fetchUserInfo("posts").then((resp) => {
-      setUserPosts(resp);
-      console.log(resp);
-    });
-
-    //USERS--
-    fetchUserInfo().then((resp) => {
-      setUsers(resp);
-    });
-
-    //POST--COMMENTS
-    fetchUserInfo("comments").then((resp) => {
-      setPostComments(resp);
-    });
-  }, userInfo != null);
+function App(props) {
+  let { user } = props;
+  let [fetchIsDone, setFetchIsDone] = useState(false);
+  useMemo(() => FetchUserInfo(setFetchIsDone, user.userId), fetchIsDone);
 
   return (
     <BrowserRouter>
       <div className="App">
         <SideBar />
-
         <Switch>
           {/* MY-PAGE */}
 
           <Route path="/MyPage">
-            {userInfo && users ? (
+            {fetchIsDone ? (
               <UserBar
-                userInfo={userInfo}
-                userPosts={userPosts}
-                userId={userId}
-                postComments={postComments}
+                userInfo={user.userInfo}
+                userPosts={user.userPosts}
+                userId={user.userId}
+                postComments={user.postComments}
               />
             ) : (
               <Loader />
@@ -62,7 +38,7 @@ function App() {
           {/* USERS */}
 
           <Route path="/Users">
-            {users ? <UsersBar users={users} /> : <Loader />}
+            {fetchIsDone ? <UsersBar users={user.users} /> : <Loader />}
           </Route>
 
           {/* MY MESSAGES */}
@@ -73,5 +49,10 @@ function App() {
     </BrowserRouter>
   );
 }
+const mapStateToProps = (state) => {
+  return {
+    user: state,
+  };
+};
 
-export default App;
+export default connect(mapStateToProps)(App);
